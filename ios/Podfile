@@ -14,27 +14,50 @@ if linkage != nil
   use_frameworks! :linkage => linkage.to_sym
 end
 
-target 'Uber' do
+target 'Runna' do
   config = use_native_modules!
+
+  # React Native Maps dependency
+  pod 'react-native-maps', path: '../node_modules/react-native-maps'
+  pod 'RNVectorIcons', :path => '../node_modules/react-native-vector-icons'
+
+  # Uncomment the following lines if you need Google Maps support on iOS
+  # pod 'react-native-google-maps', path: '../node_modules/react-native-maps'
+  # pod 'GoogleMaps'
+  # pod 'Google-Maps-iOS-Utils'
 
   use_react_native!(
     :path => config[:reactNativePath],
-    # An absolute path to your application root.
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
 
-  target 'UberTests' do
+  target 'RunnaTests' do
     inherit! :complete
     # Pods for testing
   end
 
   post_install do |installer|
-    # https://github.com/facebook/react-native/blob/main/packages/react-native/scripts/react_native_pods.rb#L197-L202
     react_native_post_install(
       installer,
       config[:reactNativePath],
-      :mac_catalyst_enabled => false,
-      # :ccache_enabled => true
+      :mac_catalyst_enabled => false
     )
+    installer.pods_project.targets.each do |target|
+      if target.name == 'react-native-permissions'
+        target.build_configurations.each do |config|
+          config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= [
+            '$(inherited)',
+  
+            ## Add this line for each permission you want to use in your project
+            ## You can find all available permissions in the `app.json` of the example app
+            ## https://github.com/zoontek/react-native-permissions/blob/master/example/ios/Uber/app.json
+  
+            'PERMISSIONS=1',
+            'PERMISSIONS_LOCATION_WHEN_IN_USE=1',
+            'PERMISSIONS_LOCATION_ALWAYS=1'
+          ]
+        end
+      end
+    end
   end
 end
